@@ -40,6 +40,32 @@ app.get('/api/jokes', (req, res)=>{
     res.send(jokes)
 })
 
+app.get('/api/user',(req, res)=>{
+    const Users = [
+        {
+            id: 1,
+            name: "Akash",
+            proffession: "Software Developer"
+        },
+        {
+            id: 2,
+            name: "Rahul",
+            proffession: "Software Engineer"
+        },
+        {
+            id: 3,
+            name: "Manik",
+            proffession: "Software Tester"
+        },
+        {
+            id: 4,
+            name: "Ankit",
+            proffession: "Software Developer"
+        },
+    ]
+    res.send(Users)
+})
+
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
