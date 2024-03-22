@@ -2,9 +2,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const registerUser = asyncHandler( async(req, res)=>{
     res.status(200).json({
-        message: "hello Akash Mahto"
+        message: "hello Akash Mahto you started back server"
     })
 })
 
-
+ 
 export {registerUser}
+
+
