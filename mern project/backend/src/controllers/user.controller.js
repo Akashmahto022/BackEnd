@@ -5,6 +5,19 @@ import { uploadOnCloundnary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
+
+  // get user details from frontend
+  // validation -- not empty
+  // check if the user already exists: userName, email
+  // check for images, check for avatar
+  // if available then upload them to upload On Cloundnary
+  // create user object - create entry in db
+  // remove password and refresh token field from response
+  // check for user creation 
+  // return res
+
+
+
   const { fullName, email, userName, password } = req.body;
   console.log("email: ", email);
 
@@ -16,8 +29,8 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const existedUser = user.findOne({
-    $or: [{ userName }, { email }],
+  const existedUser = await user.findOne({
+    $or: [{ userName }, { email }]
   });
 
   if (existedUser) {
@@ -30,7 +43,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   const avatar = await uploadOnCloundnary(avatarLocalPath);
   if (!avatar) {
-    throw new ApiError(400, "Avatar file is required");
+    throw new ApiError(400, "Avatar file is required yet");
   }
 
   const coverImageLocalPth = req.files?.coverImage[0]?.path;
@@ -38,11 +51,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const userData = await user.create({
     fullName,
+    email,
+    userName: userName.toLowerCase(),
+    password,
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
-    email,
-    password,
-    userName: userName.toLowerCase(),
   });
 
   const createdUser = await user
