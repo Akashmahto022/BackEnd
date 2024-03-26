@@ -5,7 +5,6 @@ import { uploadOnCloundnary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler(async (req, res) => {
-
   // get user details from frontend
   // validation -- not empty
   // check if the user already exists: userName, email
@@ -13,13 +12,11 @@ const registerUser = asyncHandler(async (req, res) => {
   // if available then upload them to upload On Cloundnary
   // create user object - create entry in db
   // remove password and refresh token field from response
-  // check for user creation 
+  // check for user creation
   // return res
 
-
-
   const { fullName, email, userName, password } = req.body;
-  console.log("email: ", email);
+  // console.log("email: ", email);
 
   if (
     [fullName, email, userName, password].some(
@@ -30,7 +27,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const existedUser = await user.findOne({
-    $or: [{ userName }, { email }]
+    $or: [{ userName }, { email }],
   });
 
   if (existedUser) {
@@ -46,8 +43,16 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar file is required yet");
   }
 
-  const coverImageLocalPth = req.files?.coverImage[0]?.path;
-  const coverImage = await uploadOnCloundnary(coverImageLocalPth);
+  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  let coverImageLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files?.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
+  const coverImage = await uploadOnCloundnary(coverImageLocalPath);
 
   const userData = await user.create({
     fullName,
