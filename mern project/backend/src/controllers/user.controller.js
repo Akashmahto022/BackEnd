@@ -4,6 +4,23 @@ import { user } from "../models/user.model.js";
 import { uploadOnCloundnary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const generateAccessAndRefreshToken = async(userId)=>{
+  try {
+    const userToken = await user.findById(userId)
+    const accessToken = userToken.generateAccessToken()
+    const refreshToken = userToken.generateRefreshToken()
+
+    user.refreshToken = refreshToken
+    await user.Save({validateBeforeSave: false})
+
+    return {accessToken, refreshToken}
+  } catch (error) {
+    throw new ApiError(500, "something went wrong while generating refresh and access token")
+  }
+}
+
+
+
 const registerUser = asyncHandler(async (req, res) => {
   // get user details from frontend
   // validation -- not empty
@@ -35,6 +52,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
+  console.log(avatarLocalPath)
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
   }
@@ -52,6 +70,7 @@ const registerUser = asyncHandler(async (req, res) => {
   ) {
     coverImageLocalPath = req.files.coverImage[0].path;
   }
+  console.log(req.files)
   const coverImage = await uploadOnCloundnary(coverImageLocalPath);
 
   const userData = await user.create({
@@ -76,4 +95,54 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User Registered Successfully"));
 });
 
-export { registerUser };
+
+
+const loginUser = asyncHandler(async(req, res)=>{
+  //thing to do when user going to register 
+  // get the data from the user (req.body -> data)
+  // login with userName or email
+  // find the user
+  // password check
+  // access and refresh Token
+  // send cookie
+
+  const {userName, email, password} = req.body
+  if (!userName || !email) {
+    throw new ApiError(400, "username/email or password is required")
+  }
+
+  const userInformation = await user.findOne({
+    $or: [{userName}, {email}]
+  })
+
+  if (!userInformation) {
+    throw new ApiError(404, "User does not exists")
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password)
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "password incorrect")
+
+  }
+
+
+  const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
+
+  const loggedInUser = await user.findById(user._id).select("-password -refreshToken")
+
+  const options = {
+    httpOnly: true,
+    secure: true
+  }
+  return res.status(200)
+  .cookie("accessToekn", accessToken, options)
+  .cookie("refreshToken", refreshToken, options)
+  .json(
+    new ApiResponse(200, {
+      user: loggedInUser, accessToken, refreshToken
+    }, "user logged in successfuly")
+  )
+})
+
+export { registerUser, loginUser };
