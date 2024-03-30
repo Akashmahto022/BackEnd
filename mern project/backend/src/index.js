@@ -15,7 +15,7 @@ connectDB()
     })
 
     app.listen(process.env.PORT || 4000, (req, res) => {
-      console.log(`server is ru ning at port: ${process.env.PORT} `);
+      console.log(`server is runing at port: ${process.env.PORT} `);
     });
   })
   .catch((error) => {
