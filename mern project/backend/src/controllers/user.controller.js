@@ -55,7 +55,6 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  console.log(avatarLocalPath);
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
   }
@@ -73,7 +72,6 @@ const registerUser = asyncHandler(async (req, res) => {
   ) {
     coverImageLocalPath = req.files.coverImage[0].path;
   }
-  console.log(req.files);
   const coverImage = await uploadOnCloundnary(coverImageLocalPath);
 
   const userData = await user.create({
@@ -141,7 +139,7 @@ const loginUser = asyncHandler(async (req, res) => {
   };
   return res
     .status(200)
-    .cookie("accessToekn", accessToken, options)
+    .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
@@ -158,7 +156,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
   await user.findByIdAndUpdate(
-    req.user._id,
+    req.userId._id,
     {
       $set: {
         refreshToken: undefined,
