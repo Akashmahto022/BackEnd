@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { user } from "../models/user.model.js";
 import { uploadOnCloundnary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -11,7 +11,7 @@ const generateAccessAndRefreshToken = async (userId) => {
     const accessToken = userToken.generateAccessToken();
     const refreshToken = userToken.generateRefreshToken();
     // console.log(userToken, accessToken)
-    userToken.refreshToken = refreshToken
+    userToken.refreshToken = refreshToken;
     // console.log(userToken.refreshToken)
     await userToken.save({ validateBeforeSave: false });
 
@@ -115,7 +115,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const userInformation = await user.findOne({
-    $or: [ { userName }, { email } ],
+    $or: [{ userName }, { email }],
   });
 
   if (!userInformation) {
@@ -128,7 +128,9 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "password incorrect");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(userInformation._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    userInformation._id
+  );
 
   const loggedInUser = await user
     .findById(userInformation._id)
@@ -178,70 +180,82 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User Loged Out"));
 });
 
-const refreshAccessToken = asyncHandler(async (req, res)=>{
-  const incomingRefreshToekn = req.cookies.refreshToken || req.body.refreshToken
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToekn =
+    req.cookies.refreshToken || req.body.refreshToken;
 
-  if(!incomingRefreshToekn){
-    throw new ApiError(401, "Unauthorized request")
+  if (!incomingRefreshToekn) {
+    throw new ApiError(401, "Unauthorized request");
   }
 
   try {
-    const decodedToekn = jwt.verify(incomingRefreshToekn, process.env.REFRESH_TOKEN_SECRET)
-  
-    const userId = await user.findById(decodedToekn?._id)
-  
+    const decodedToekn = jwt.verify(
+      incomingRefreshToekn,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    const userId = await user.findById(decodedToekn?._id);
+
     if (!userId) {
-      throw new ApiError(401, "invalid refresh token")
+      throw new ApiError(401, "invalid refresh token");
     }
-  
+
     if (incomingRefreshToekn !== userId?.refreshToken) {
-      throw new ApiError(401, "refresh token is expired or used")
+      throw new ApiError(401, "refresh token is expired or used");
     }
-  
+
     const options = {
       httpOnly: true,
       secure: true,
     };
-    const {accessToken, newRefreshToken} = await generateAccessAndRefreshToken(userId._id)
+    const { accessToken, newRefreshToken } =
+      await generateAccessAndRefreshToken(userId._id);
     return res
-    .status(201)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", newRefreshToken, options)
-    .json(
-      new ApiResponse(
-        200, 
-        {accessToken, refreshToken: newRefreshToken},
-        "Access and refresh token refreshed"
-      )
-    )
+      .status(201)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken: newRefreshToken },
+          "Access and refresh token refreshed"
+        )
+      );
   } catch (error) {
-    throw new ApiError(401, error?.message || "invalid refresh token")
+    throw new ApiError(401, error?.message || "invalid refresh token");
+  }
+});
+
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const currentUser = await user.findById(req.userId?.id);
+
+  const isPasswordCorrect = await currentUser.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, "Invalid old password");
   }
 
+  currentUser.password = newPassword;
+  await currentUser.save({ validateBeforeSave: false });
 
-
-})
-
-const changeCurrentPassword = asyncHandler(async(req, res)=>{
-    const {oldPassword, newPassword} = req.body
-    
-    const currentUser = await user.findById(req.userId?.id)
-
-    const isPasswordCorrect = await currentUser.isPasswordCorrect(oldPassword)
-
-    if (!isPasswordCorrect) {
-      throw new ApiError(401, "Invalid old password")
-    }
-
-    currentUser.password = newPassword
-    await currentUser.save({validateBeforeSave: false})
-    
-    return res
+  return res
     .status(200)
-    .json(new ApiResponse(200, {}, "pasword change succesfully"))
+    .json(new ApiResponse(200, {}, "pasword change succesfully"));
+});
 
-})
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(200, req.userId, "current user fetched successfully");
+});
 
-
-
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword};
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser
+};
