@@ -256,7 +256,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, email } = req.body;
 
-  const updateUser = user
+  const updateUser = await user
     .findByIdAndUpdate(
       req.userId?._id,
       {
@@ -324,7 +324,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
       {
         $set: {
           coverImage: coverImage.url,
-        },
+        },  
       },
       { new: true }
     )
