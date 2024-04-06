@@ -270,6 +270,33 @@ const updateAccountDetails = asyncHandler(async(req, res)=>{
   .json(new ApiResponse(200,updateUser, "Account Details Update Successfully" ))
 })
 
+const updateUserAvatar = asyncHandler(async(req, res)=>{
+  const avatarLocalPath = req.file?.path
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is missinf")
+  }
+
+  const avatar = await uploadOnCloundnary(avatarLocalPath)
+  if (!avatar.url) {
+    throw new ApiError(400, "Error while uploading avatar")
+  }
+
+  await user.findByIdAndUpdate(
+    req.userId?._id,
+    {
+      $set: {
+        avatar: avatar.url
+      }
+    },
+    {new : true}
+  ).select("-password")
+
+  return res
+  .status(200)
+  .json(ApiResponse(200, avatar.url, "update avatar image successfully"))
+})
+
 
 
 export {
@@ -279,5 +306,6 @@ export {
   refreshAccessToken,
   changeCurrentPassword,
   getCurrentUser,
-  updateAccountDetails
+  updateAccountDetails,
+  updateUserAvatar
 };
