@@ -13,15 +13,11 @@ app.get('/name', (req, res)=>{
 })
 
 app.get('/login',(req, res)=>{
-    res.send(
+    res.json(
         {
             name: "Akash",
             age: 20
-        },
-        {
-            name: "Rahul",
-            age: 26
-        },
+        }
     )
 })
 

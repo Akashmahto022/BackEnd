@@ -1,0 +1,16 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "connect front end to backend",
+  "main": "server.js",
+  "type": "module",
+  
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Akash Mahto",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
