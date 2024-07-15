@@ -3,7 +3,7 @@ class apiError extends Error{
         statusCode,
         message="Something went wron",
         errors = [],
-        statck = ""
+        stack = ""
     ){
         super(message)
         this.statusCode = statusCode
@@ -12,8 +12,8 @@ class apiError extends Error{
         this.success = false
         this.errors = errors
 
-        if (statck) {
-            this.stack = this.statck
+        if (stack) {
+            this.stack = this.stack
         }else{
             Error.captureStackTrace(this, this.constructor)
         }
