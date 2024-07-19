@@ -18,4 +18,11 @@ app.use(cookieparser())
 // routes declaration
 app.use('/api/v1/user', router)
 
+
+
+app.get('/',(req, res)=>{
+    res.send("hi Akash mahto")
+})
+
+
 export { app }
