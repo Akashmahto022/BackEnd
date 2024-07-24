@@ -3,18 +3,20 @@ import { apiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloundinary } from "../utils/cloudinary.js";
 import { apiResponce } from "../utils/apiResponce.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefereshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
     const accessToken = user.generateAccessToken();
-    const refereshToken = user.generateRefreshToken();
-
-    user.refereshToken = refereshToken;
+    const refreshToken = user.generateRefreshToken();
+    console.log(accessToken, refreshToken);
+    user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
-    return { accessToken, refereshToken };
+    return { accessToken, refreshToken };
   } catch (error) {
+    console.log(error);
     throw new apiError(500, "error while generating referesh and access token");
   }
 };
@@ -116,12 +118,12 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new apiError(401, "Wrong password");
   }
 
-  const { accessToken, refereshToken } = await generateAccessAndRefereshToken(
+  const { accessToken, refreshToken } = await generateAccessAndRefereshToken(
     user._id
   );
 
   const logedInUser = await User.findById(user._id).select(
-    "-password -refereshToken"
+    "-password -refreshToken"
   );
 
   const options = {
@@ -131,10 +133,75 @@ const loginUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .cookie("accessToken", accessToken, options)
-    .cookie("refereshToken", refereshToken, options)
+    .cookie("refereshToken", refreshToken, options)
     .json(
-      new apiResponce(200, { user: logedInUser, accessToken, refereshToken }, "User LogedIn SuccessFully")
+      new apiResponce(
+        200,
+        { user: logedInUser, accessToken, refreshToken },
+        "User LogedIn SuccessFully"
+      )
     );
 });
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {
+  User.findByIdAndUpdate(req.body._id, {
+    $set: {
+      refreshToken: undefined,
+    },
+  });
+  const option = {
+    httpOnly: true,
+    secure: true,
+  };
+  return res
+    .status(200)
+    .clearCookie("accessToken", option)
+    .clearCookie("refereshToken", option)
+    .json(new apiResponce(200, {}, "User Logged Out"));
+});
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new apiError(401, "unauthorized request");
+  }
+
+  try {
+    const decode = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOEKN_SECRET
+    );
+    const user = await User.findById(decode?._id);
+    if (!user) {
+      throw new apiError(401, "invalid refresh token");
+    }
+  
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new apiError(401, "refresh token is expired");
+    }
+   const {accessToken, refreshToken} = await generateAccessAndRefereshToken(user._id)
+  
+    const options = {
+      httpOnly:true,
+      secure:true
+    }
+  
+    return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new apiResponce(
+        200, 
+        {accessToken, refreshToken},
+        "Access Token refresh"
+      )
+    )
+  } catch (error) {
+    throw new apiError(401, error?.message || "invalid refresh token")
+  }
+
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken };
